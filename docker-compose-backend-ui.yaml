@@ -1,0 +1,65 @@
+version: '3.3'
+
+services:
+  verifier-react-app:
+    image: senthilakshay27/dy-assignment-verifier-ui:4 
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    ports:
+      - "4000:80" # Map React app container's port 80 to host's port 3000
+    environment:
+      - REACT_APP_API_IP=http://127.0.0.1
+      - REACT_APP_SOCKET_PORT=3051
+      - REACT_APP_PORT=3002
+      - PORT=4000
+    volumes:
+      - ./env-config.js:/usr/share/nginx/html/env-config.js
+
+  user-react-app:
+    image: senthilakshay27/dy-assignment-user-ui:2
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    ports:
+      - "4001:80" # Map React app container's port 80 to host's port 3000
+    environment:
+      - REACT_APP_API_IP=http://127.0.0.1
+      - REACT_APP_SOCKET_PORT=3051
+      - REACT_APP_PORT=3002
+      - PORT=4001
+    volumes:
+      - ./env-config.js:/usr/share/nginx/html/env-config.js      
+
+  issuer-react-app:
+    image: senthilakshay27/dy-assignment-issuer-ui:3
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    ports:
+      - "4002:80" # Map React app container's port 80 to host's port 3000
+    environment:
+      - REACT_APP_API_IP=http://127.0.0.1
+      - REACT_APP_SOCKET_PORT=3051
+      - REACT_APP_PORT=3002
+      - PORT=4002
+    volumes:
+      - ./env-config.js:/usr/share/nginx/html/env-config.js          
+
+  backed-nestjs-app:
+    image: senthilakshay27/dy-assignment-backend:1
+    # build:
+    #   context: .
+    ports:
+      - "3002:3002"
+      - "3051:3051"  # Ensure port matches the one in your NestJS app
+    environment:
+      - MONGO_URI=mongodb://root:pass1234@127.0.0.1:27017/
+      - WEB_SOCKET_PORT=3051
+      - IP=127.0.0.1
+      - PORT=3002
+      - ISSUER_IP=127.0.0.1:8021
+      - VERIFIER_IP=127.0.0.1:8031
+      - HOLDER_IP=127.0.0.1:8041
+      - NETWORK_ADMIN_IP=127.0.0.1:9000
+   

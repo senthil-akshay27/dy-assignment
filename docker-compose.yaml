@@ -1,0 +1,378 @@
+version: '3'
+services:
+  #
+  # Webserver
+  #
+  webserver:
+    image: ghcr.io/bcgov/von-network-base:latest
+    container_name: webserver
+    command: 'bash -c ''sleep 10; ./scripts/start_webserver.sh;'''
+    restart: always
+    environment:
+      - IP=${IP}
+      - IPS=${IPS}
+      # - DOCKERHOST=${DOCKERHOST}
+      # - LOG_LEVEL=${LOG_LEVEL:-info}
+      # - RUST_LOG=${RUST_LOG:-warning}
+      # - GENESIS_URL=${GENESIS_URL}
+      - LEDGER_SEED=${LEDGER_SEED:-000000000000000000000000Trustee1}
+      # - LEDGER_CACHE_PATH=${LEDGER_CACHE_PATH}
+      - MAX_FETCH=${MAX_FETCH:-50000}
+      - RESYNC_TIME=${RESYNC_TIME:-120}
+      - POOL_CONNECTION_ATTEMPTS=${POOL_CONNECTION_ATTEMPTS:-5}
+      - POOL_CONNECTION_DELAY=${POOL_CONNECTION_DELAY:-10}
+      - REGISTER_NEW_DIDS=${REGISTER_NEW_DIDS:-True}
+      - LEDGER_INSTANCE_NAME=${LEDGER_INSTANCE_NAME:-TestNetwork}
+      # - WEB_ANALYTICS_SCRIPT=${WEB_ANALYTICS_SCRIPT}
+      # - INFO_SITE_TEXT=${INFO_SITE_TEXT}
+      # - INFO_SITE_URL=${INFO_SITE_URL}
+      # - INDY_SCAN_URL=${INDY_SCAN_URL}
+      # - INDY_SCAN_TEXT=${INDY_SCAN_TEXT}
+      
+    networks:
+      - von
+    depends_on:
+      - node1
+      - node2
+      - node3
+      - node4
+    ports:
+      - ${WEB_SERVER_HOST_PORT:-9000}:8000
+    volumes:
+      # - ./config:/home/indy/config
+      # - ./server:/home/indy/server
+      - webserver-cli:/home/indy/.indy-cli
+      - webserver-ledger:/home/indy/ledger
+
+
+  node1:
+    image: ghcr.io/bcgov/von-network-base:latest
+    container_name: node1
+    restart: always
+    command: 'bash -c ''./scripts/start_node.sh 1'''
+    networks:
+      - von
+    ports:
+      - 9701:9701
+      - 9702:9702
+    environment:
+      - IP=${IP}
+      - IPS=${IPS}
+      # - DOCKERHOST=${DOCKERHOST}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - RUST_LOG=${RUST_LOG:-warning}
+    volumes:
+      - node1-data:/home/indy/ledger
+
+  node2:
+    image: ghcr.io/bcgov/von-network-base:latest
+    restart: always
+    container_name: node2
+    command: 'bash -c ''./scripts/start_node.sh 2'''
+    networks:
+      - von
+    ports:
+      - 9703:9703
+      - 9704:9704
+    environment:
+      - IP=${IP}
+      - IPS=${IPS}
+      # - DOCKERHOST=${DOCKERHOST}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - RUST_LOG=${RUST_LOG:-warning}
+    volumes:
+      - node2-data:/home/indy/ledger
+
+  node3:
+    image: ghcr.io/bcgov/von-network-base:latest
+    restart: always
+    container_name: node3
+    command: 'bash -c ''./scripts/start_node.sh 3'''
+    networks:
+      - von
+    ports:
+      - 9705:9705
+      - 9706:9706
+    environment:
+      - IP=${IP}
+      - IPS=${IPS}
+      # - DOCKERHOST=${DOCKERHOST}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - RUST_LOG=${RUST_LOG:-warning}
+    volumes:
+      - node3-data:/home/indy/ledger
+
+  node4:
+    image: ghcr.io/bcgov/von-network-base:latest
+    restart: always
+    container_name: node4
+    command: 'bash -c ''./scripts/start_node.sh 4'''
+    networks:
+      - von
+    ports:
+      - 9707:9707
+      - 9708:9708
+    environment:
+      - IP=${IP}
+      - IPS=${IPS}
+      # - DOCKERHOST=${DOCKERHOST}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - RUST_LOG=${RUST_LOG:-warning}
+    volumes:
+      - node4-data:/home/indy/ledger
+
+  MT-users:
+    container_name: MT-users
+    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly-2024-12-06
+    # image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.1.0
+    working_dir: /home/indy
+    environment:
+      - ADMIN_API_PORT=8041
+      - INBOUND_TRANSPORT_PORT=8040
+      - ACAPY_LABEL=MT-users.agent
+      - ACAPY_AGENT_ACCESS=${ACAPY_AGENT_ACCESS:-local}
+      - ACAPY_ENDPOINT=http://${IP}:8040
+      - ACAPY_GENESIS_URL=http://${IP}:9000/genesis
+      - ACAPY_OUTBOUND_TRANSPORT=http
+      - ACAPY_ADMIN_INSECURE_MODE=true
+      - ACAPY_WALLET_TYPE=askar-anoncreds
+      - ACAPY_WALLET_NAME=MT-users.agent916333
+      - ACAPY_WALLET_KEY=MT-users.agent916333
+      - ACAPY_LOG_LEVEL=debug
+      - ACAPY_TRACE_LABEL=MT-users.agent.trace
+      # - ACAPY_MULTITENANT=true
+      # - ACAPY_MULTITENANT_ADMIN=true
+      # - ACAPY_MULTITENANT_JWT_SECRET="projectAssignment"
+      - ACAPY_AUTO_ACCEPT_INVITES=true
+      - ACAPY_AUTO_ACCEPT_REQUESTS=true
+      - ACAPY_AUTO_RESPOND_MESSAGES=true
+      - ACAPY_AUTO_RESPOND_CREDENTIAL_PROPOSAL=true
+      - ACAPY_AUTO_RESPOND_CREDENTIAL_OFFER=true
+      - ACAPY_AUTO_RESPOND_CREDENTIAL_REQUEST=true
+      - ACAPY_AUTO_RESPOND_PRESENTATION_PROPOSAL=false
+      - ACAPY_AUTO_RESPOND_PRESENTATION_REQUEST=false
+      # - ACAPY_AUTO_VERIFY_PRESENTATION=false
+      - ACAPY_AUTO_STORE_CREDENTIAL=true
+      - ACAPY_AUTO_PING_CONNECTION=true
+      - ACAPY_AUTO_PROVISION=true
+      - ACAPY_PRESERVE_EXCHANGE_RECORDS=true
+      - ACAPY_TRACE_TARGET=log
+      - ACAPY_TRACE_TAG=acapy.events
+      - ACAPY_WALLET_STORAGE_TYPE=postgres_storage
+      # - ACAPY_WALLET_STORAGE_CONFIG='{"url":"postgres-service:5432","wallet_scheme":"DatabasePerWallet"}'
+      # - ACAPY_WALLET_STORAGE_CREDS='{"account":"postgres","password":"development","admin_account":"postgres","admin_password":"development"}'
+      # - ACAPY_WALLET_STORAGE_CONFIG='{\"url\":\"wallet-db:5432\",\"max_connections\":5}'
+      # - ACAPY_WALLET_STORAGE_CREDS='{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"postgres\",\"admin_password\":\"mysecretpassword\"}'
+      # - ACAPY_WALLET_STORAGE_CONFIG="{\"url\":\"wallet_db:5432\",\"wallet_scheme\":\"DatabasePerWallet\"}"
+      # - ACAPY_WALLET_STORAGE_CREDS="{\"account\":\"postgres\",\"password\":\"development\",\"admin_account\":\"postgres\",\"admin_password\":\"development\"}"
+      # - ACAPY_WALLET_STORAGE_CONFIG="{"url":\"wallet-db:5432\",\"wallet_scheme\":\"DatabasePerWallet\"}"
+      # - ACAPY_WALLET_STORAGE_CREDS="{\"account\":\"postgres\",\"password\":\"development\",\"admin_account\":\"postgres\",\"admin_password\":\"development\"}"
+      # - ACAPY_WEBHOOK_URL=http://${IP}:3000/holder
+      - ACAPY_MONITOR_REVOCATION_NOTIFICATION=true
+    entrypoint: /bin/bash
+    command: [
+        "-c",
+        "sleep 5; \
+        aca-py start \
+        --inbound-transport http '0.0.0.0' 8040 \
+        --outbound-transport http \
+        --monitor-ping \
+        --public-invites \
+        --multitenant \
+        --multitenant-admin \
+        --jwt-secret 'projectAssignment' \
+        --wallet-storage-config '{\"url\":\"wallet-db:5432\",\"max_connections\":5,\"scheme\":\"MultiWalletSingleTable\"}' \
+        --wallet-storage-creds '{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}' \
+        --admin '0.0.0.0' 8041 ",
+        ]
+    ports:
+      - "8040:8040"
+      - "8041:8041"
+      - "8042:8042"
+    networks:
+     - von
+
+  issuer:
+    container_name: issuer
+    # restart: always
+    # image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.1.0
+    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly-2024-12-06
+    working_dir: /home/indy
+    environment:
+      - ADMIN_API_PORT=8021
+      # - ACAPY_OPTS=--plugins "aca-py-metrics-exporter"
+      # - METRICS_URL=http://0.0.0.0:8000
+      - INBOUND_TRANSPORT_PORT=8020
+      - ACAPY_LABEL=issuer
+      - ACAPY_ENDPOINT=http://${IP}:8020
+      - ACAPY_GENESIS_URL=http://${IP}:9000/genesis
+      - ACAPY_OUTBOUND_TRANSPORT=http
+      - ACAPY_ADMIN_INSECURE_MODE=true
+      - ACAPY_WALLET_TYPE=askar-anoncreds
+      - ACAPY_WALLET_NAME=issuer.agent916333
+      - ACAPY_WALLET_KEY=issuer.agent916333
+      - ACAPY_LOG_LEVEL=info
+      - ACAPY_TRACE_LABEL=issuer.agent.trace
+      - ACAPY_AUTO_ACCEPT_INVITES=true
+      - ACAPY_AUTO_ACCEPT_REQUESTS=true
+      - ACAPY_AUTO_RESPOND_MESSAGES=true
+      - ACAPY_AUTO_RESPOND_CREDENTIAL_PROPOSAL=false
+      - ACAPY_AUTO_RESPOND_CREDENTIAL_OFFER=false
+      - ACAPY_AUTO_RESPOND_CREDENTIAL_REQUEST=true
+      - ACAPY_AUTO_RESPOND_PRESENTATION_PROPOSAL=true
+      - ACAPY_AUTO_RESPOND_PRESENTATION_REQUEST=true
+      # - ACAPY_AUTO_VERIFY_PRESENTATION=false
+      - ACAPY_AUTO_STORE_CREDENTIAL=true
+      - ACAPY_AUTO_PING_CONNECTION=true
+      - ACAPY_PRESERVE_EXCHANGE_RECORDS=true
+      - ACAPY_TRACE_TARGET=log
+      - ACAPY_TRACE_TAG=acapy.events
+      - ACAPY_AUTO_PROVISION=true
+      - ACAPY_WALLET_STORAGE_TYPE=postgres_storage
+      # - ACAPY_WALLET_STORAGE_CONFIG='{"url":"postgres-service:5432","wallet_scheme":"DatabasePerWallet"}'
+      # - ACAPY_WALLET_STORAGE_CREDS='{"account":"postgres","password":"development","admin_account":"postgres","admin_password":"development"}'
+      # - ACAPY_WALLET_STORAGE_CONFIG={"url":"ariesdb.cdc1jjga83ml.us-east-1.rds.amazonaws.com:5432","wallet_scheme":"DatabasePerWallet"}
+      # - ACAPY_WALLET_STORAGE_CREDS={"account":"postgres","password":"JtL53CdlLN6Tdzckfrjg","admin_account":"postgres","admin_password":"JtL53CdlLN6Tdzckfrjg"}
+      # - ACAPY_WALLET_STORAGE_CONFIG='{\"url\":\"wallet-db:5432\",\"max_connections\":5}'
+      # - ACAPY_WALLET_STORAGE_CREDS='{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"postgres\",\"admin_password\":\"mysecretpassword\"}'
+      # - ACAPY_TAILS_SERVER_BASE_URL=http://${IP}:6543
+      # - ACAPY_TAILS_SERVER_UPLOAD_URL=http://${IP}:6543
+      # - ACAPY_WEBHOOK_URL=http://${IP}:3002/verifier/webhooks
+      - ACAPY_MONITOR_REVOCATION_NOTIFICATION=true
+    entrypoint: /bin/bash
+    command: [
+        "-c",
+        "sleep 5; \
+        aca-py start \
+        --inbound-transport http '0.0.0.0' 8020 \
+        --outbound-transport http \
+        --wallet-storage-config '{\"url\":\"wallet-db:5432\",\"max_connections\":5,\"scheme\":\"MultiWalletSingleTable\"}' \
+        --wallet-storage-creds '{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}' \
+        --admin '0.0.0.0' 8021 ",
+        ]
+    ports:
+      - "8021:8021"
+      - "8020:8020"
+      - "8022:8022"
+    networks:
+      - von
+
+
+
+  verifier:
+    container_name: verifier
+    # restart: always
+    # image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.1.0
+    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly-2024-12-06
+    working_dir: /home/indy
+    environment:
+      - ADMIN_API_PORT=8031
+      # - ACAPY_OPTS=--plugins "aca-py-metrics-exporter"
+      # - METRICS_URL=http://0.0.0.0:8000
+      - INBOUND_TRANSPORT_PORT=8030
+      - ACAPY_LABEL=verifier
+      - ACAPY_ENDPOINT=http://${IP}:8030
+      - ACAPY_GENESIS_URL=http://${IP}:9000/genesis
+      - ACAPY_OUTBOUND_TRANSPORT=http
+      - ACAPY_ADMIN_INSECURE_MODE=true
+      - ACAPY_WALLET_TYPE=askar-anoncreds
+      - ACAPY_WALLET_NAME=verifier.agent916333
+      - ACAPY_WALLET_KEY=verifier.agent916333
+      - ACAPY_LOG_LEVEL=info
+      - ACAPY_TRACE_LABEL=verifier.agent.trace
+      - ACAPY_AUTO_ACCEPT_INVITES=true
+      - ACAPY_AUTO_ACCEPT_REQUESTS=true
+      - ACAPY_AUTO_RESPOND_MESSAGES=true
+      - ACAPY_AUTO_RESPOND_CREDENTIAL_PROPOSAL=true
+      - ACAPY_AUTO_RESPOND_CREDENTIAL_OFFER=true
+      - ACAPY_AUTO_RESPOND_CREDENTIAL_REQUEST=true
+      # - ACAPY_AUTO_RESPOND_PRESENTATION_PROPOSAL=false
+      # - ACAPY_AUTO_RESPOND_PRESENTATION_REQUEST=false
+      # - ACAPY_AUTO_VERIFY_PRESENTATION=false
+      - ACAPY_AUTO_STORE_CREDENTIAL=true
+      - ACAPY_AUTO_PING_CONNECTION=true
+      - ACAPY_PRESERVE_EXCHANGE_RECORDS=true
+      - ACAPY_TRACE_TARGET=log
+      - ACAPY_TRACE_TAG=acapy.events
+      - ACAPY_AUTO_PROVISION=true
+      - ACAPY_WALLET_STORAGE_TYPE=postgres_storage
+      # - ACAPY_WALLET_STORAGE_CONFIG='{"url":"postgres-service:5432","wallet_scheme":"DatabasePerWallet"}'
+      # - ACAPY_WALLET_STORAGE_CREDS='{"account":"postgres","password":"development","admin_account":"postgres","admin_password":"development"}'
+      # - ACAPY_WALLET_STORAGE_CONFIG={"url":"ariesdb.cdc1jjga83ml.us-east-1.rds.amazonaws.com:5432","wallet_scheme":"DatabasePerWallet"}
+      # - ACAPY_WALLET_STORAGE_CREDS={"account":"postgres","password":"JtL53CdlLN6Tdzckfrjg","admin_account":"postgres","admin_password":"JtL53CdlLN6Tdzckfrjg"}
+      # - ACAPY_WALLET_STORAGE_CONFIG='{\"url\":\"wallet-db:5432\",\"max_connections\":5}'
+      # - ACAPY_WALLET_STORAGE_CREDS='{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"postgres\",\"admin_password\":\"mysecretpassword\"}'
+      # - ACAPY_TAILS_SERVER_BASE_URL=http://${IP}:6543
+      # - ACAPY_TAILS_SERVER_UPLOAD_URL=http://${IP}:6543
+      - ACAPY_WEBHOOK_URL=http://${IP}:3002/verifier/webhooks
+      - ACAPY_MONITOR_REVOCATION_NOTIFICATION=true
+    entrypoint: /bin/bash
+    command: [
+        "-c",
+        "sleep 5; \
+        aca-py start \
+        --inbound-transport http '0.0.0.0' 8030 \
+        --outbound-transport http \
+        --wallet-storage-config '{\"url\":\"wallet-db:5432\",\"max_connections\":5,\"scheme\":\"MultiWalletSingleTable\"}' \
+        --wallet-storage-creds '{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}' \
+        --admin '0.0.0.0' 8031 ",
+        ]
+    ports:
+      - "8031:8031"
+      - "8030:8030"
+      - "8032:8032"
+    networks:
+      - von
+
+
+  wallet-db:
+    image: postgres:14
+    environment:
+      - POSTGRES_USER=DB_USER
+      - POSTGRES_PASSWORD=DB_PASSWORD
+    ports:
+      - 5433:5432
+    volumes:
+      - wallet-db-data:/var/lib/pgsql/data
+      - ./max_conns.sql:/docker-entrypoint-initdb.d/max_conns.sql    
+    networks:
+      - von
+      
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: pass1234
+      # MONGO_INITDB_DATABASE: premier
+    ports:
+      - 27017:27017
+    networks:
+      - von
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8091:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: adminpw
+      # ME_CONFIG_MONGODB_ENABLE_ADMIN: 'true'
+      ME_CONFIG_MONGODB_URL: mongodb://root:pass1234@mongo:27017/    
+    networks:
+      - von  
+  
+networks:
+  von:
+
+volumes:
+  client-data:
+  webserver-cli:
+  webserver-ledger:
+  node1-data:
+  node2-data:
+  node3-data:
+  node4-data:
+  nodes-data:
+  wallet-db-data:
